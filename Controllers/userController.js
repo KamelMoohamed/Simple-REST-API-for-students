@@ -42,9 +42,9 @@ const getUserById = () => {
 
 const createUser = () =>
   CatchAsync(async (req, res, next) => {
-    const { name, email, GPA } = request.body;
+    const { name, email, password, GPA } = req.body;
     pool.query(
-      `INSERT INTO USER (name, email, GPA) VALUES (${name}, ${email}, ${GPA}) RETURNING id`,
+      `INSERT INTO USER (name, email, password, GPA) VALUES (${name}, ${email}, ${password} ,${GPA}) RETURNING id`,
       (err, results) => {
         if (err) {
           throw err;
@@ -58,16 +58,16 @@ const createUser = () =>
 
 const updateUser = () => {
   CatchAsync(async (req, res, next) => {
-    const id = parseInt(request.params.id);
-    const { name, email, GPA } = request.body;
+    const id = parseInt(req.params.id);
+    const { name, email, password, GPA } = req.body;
 
     pool.query(
-      `UPDATE USER SET name = ${name}, email = ${email}, GPA = ${GPA} WHERE id = ${id}`,
+      `UPDATE USER SET name = ${name}, email = ${email}, password = ${password}, GPA = ${GPA} WHERE id = ${id}`,
       (err, results) => {
         if (err) {
           throw err;
         }
-        response.status(200).send(`success`);
+        res.status(200).send(`success`);
       }
     );
   });
@@ -75,13 +75,13 @@ const updateUser = () => {
 
 const deleteUser = () => {
   CatchAsync(async (req, res, next) => {
-    const id = parseInt(request.params.id);
+    const id = parseInt(req.params.id);
 
     pool.query(`DELETE FROM USER WHERE id = ${id}`, (err, results) => {
       if (err) {
         throw err;
       }
-      response.status(200).send(`success deleting user`);
+      res.status(200).send(`success deleting user`);
     });
   });
 };
