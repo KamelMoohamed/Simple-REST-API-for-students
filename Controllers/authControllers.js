@@ -1,9 +1,7 @@
 const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
-const AppError = require("../utils/appError");
 const appError = require("../utils/appError");
 const CatchAsync = require("../utils/CatchAsync");
-const appError = require("../utils/appError");
 const Pool = require("pg").Pool;
 dotenv.config({ path: "./config.env" });
 
@@ -77,4 +75,35 @@ exports.login = CatchAsync(async (req, res, next) => {
       createSendToken(results.rows, 200, res);
     }
   );
+});
+
+exports.protect = CatchAsync(async (req, res, next) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+  if (!token) {
+    return next(new AppError("You aren't logged in!", 401));
+  }
+
+  const decodedData = await promisify(jwt.verify)(
+    token,
+    process.env.JWT_SECRET
+  );
+
+  pool.query(
+    `SELECT * FROM USER WHERE id = ${decodedData.id}`,
+    (err, results) => {
+      if (!results) {
+        return next(new AppError("The token dosen't longer exist.", 401));
+      }
+    }
+  );
+
+  req.user = results.rows;
+
+  next();
 });
