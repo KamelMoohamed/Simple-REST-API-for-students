@@ -1,19 +1,11 @@
 import { Request, Response } from "express";
 const CatchAsync = require("../utils/CatchAsync");
-const Pool = require("pg").Pool;
 dotenv.config({ path: "./config.env" });
-
-const pool = new Pool({
-  user: process.env.USER,
-  host: process.env.HOST,
-  database: process.env.DATABASE,
-  password: process.env.PASSWORD,
-  port: 5432,
-});
+const pool = require("../db");
 
 const getAllUsers = () => {
   CatchAsync(async (req: Request, res: Response, next: any) => {
-    pool.query("SELECT * FROM USER", (err: string, results: any) => {
+    pool.query("SELECT * FROM students_data", (err: string, results: any) => {
       if (err) {
         throw err;
       }
@@ -30,7 +22,8 @@ const getUserById = () => {
     const id = parseInt(req.params.id);
 
     pool.query(
-      `SELECT * FROM USER WHERE id = ${id}`,
+      `SELECT * FROM students_data WHERE id = $1`,
+      [id],
       (err: string, results: any) => {
         if (err) {
           throw err;
@@ -48,7 +41,8 @@ const createUser = () =>
   CatchAsync(async (req: Request, res: Response, next: any) => {
     const { name, email, password, GPA } = req.body;
     pool.query(
-      `INSERT INTO USER (name, email, password, GPA) VALUES (${name}, ${email}, ${password} ,${GPA}) RETURNING id`,
+      `INSERT INTO students_data (name, email, password, GPA) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [name, email, password, GPA],
       (err: string, results: any) => {
         if (err) {
           throw err;
@@ -66,7 +60,8 @@ const updateUser = () => {
     const { name, email, password, GPA } = req.body;
 
     pool.query(
-      `UPDATE USER SET name = ${name}, email = ${email}, password = ${password}, GPA = ${GPA} WHERE id = ${id}`,
+      `UPDATE students_data SET name = $1, email = $2, password = $3, GPA = $4 WHERE id = $5`,
+      [name, email, password, GPA, id],
       (err: string, results: any) => {
         if (err) {
           throw err;
@@ -82,7 +77,8 @@ const deleteUser = () => {
     const id = parseInt(req.params.id);
 
     pool.query(
-      `DELETE FROM USER WHERE id = ${id}`,
+      `DELETE FROM students_data WHERE id = $1`,
+      [id],
       (err: string, results: any) => {
         if (err) {
           throw err;

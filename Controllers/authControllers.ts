@@ -3,17 +3,10 @@ const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
 const appError = require("../utils/appError");
 const CatchAsync = require("../utils/CatchAsync");
-const Pool = require("pg").Pool;
 const dotenv = require("dotenv");
-dotenv.config({ path: "./config.env" });
+const pool = require("../db");
 
-const pool = new Pool({
-  user: process.env.USER,
-  host: process.env.HOST,
-  database: process.env.DATABASE,
-  password: process.env.PASSWORD,
-  port: 5432,
-});
+dotenv.config({ path: "./config.env" });
 
 const userToken = (id: Number) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -46,7 +39,8 @@ const createSendToken = (user: any, statusCode: number, res: Response) => {
 
 exports.signup = CatchAsync(async (req: Request, res: Response, next: any) => {
   pool.query(
-    `INSERT INTO USER (name, email, password) VALUES(${req.body.name}, ${req.body.email}, ${req.body.password})`,
+    `INSERT INTO students_data (name, email, password) VALUES($1, $2, $3)`,
+    [req.body.name, req.body.email, req.body.password],
     (err: string, results: string) => {
       if (err) {
         return err;
@@ -63,7 +57,8 @@ exports.login = CatchAsync(async (req: Request, res: Response, next: any) => {
     return next(new appError("Please provide both email and password", 400));
   }
   pool.query(
-    `SELECT * FROM USER WHERE email = ${email} AND password = ${password}`,
+    `SELECT * FROM students_data WHERE email = $1 AND password = $2`,
+    [email, password],
     (err: string, results: any) => {
       if (err) {
         throw err;
@@ -98,7 +93,8 @@ exports.protect = CatchAsync(async (req: Request, res: Response, next: any) => {
   );
 
   pool.query(
-    `SELECT * FROM USER WHERE id = ${decodedData.id}`,
+    `SELECT * FROM students_data WHERE id = $1`,
+    [decodedData.id],
     (err: string, results: string) => {
       if (!results) {
         return next(new AppError("The token dosen't longer exist.", 401));
