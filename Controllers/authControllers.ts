@@ -5,8 +5,10 @@ const appError = require("../utils/appError");
 const CatchAsync = require("../utils/CatchAsync");
 const dotenv = require("dotenv");
 const pool = require("../db");
+const sgMail = require("@sendgrid/mail");
 
 dotenv.config({ path: "./config.env" });
+sgMail.sendApiKey(process.env.API_KEY);
 
 const userToken = (id: Number) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -45,7 +47,24 @@ exports.signup = CatchAsync(async (req: Request, res: Response, next: any) => {
       if (err) {
         return err;
       }
+
       createSendToken(results, 201, res);
+
+      const message = {
+        to: req.body.email,
+        from: {
+          name: process.env.SENDER_NAME,
+          email: process.env.SENDER_MAIL,
+        },
+        subject: `Hello ${req.body.name}`,
+        text: "Welcome to Coformatique.",
+        html: "<h1>Welcome to Coformatique.</h1>",
+      };
+
+      sgMail
+        .send(message)
+        .then(() => console.log("Email has been send"))
+        .catch((error: any) => console.log(error.message));
     }
   );
 });
